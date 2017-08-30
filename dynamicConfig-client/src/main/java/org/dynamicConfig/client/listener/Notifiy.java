@@ -9,6 +9,7 @@ import java.util.Set;
 import org.dynamicConfig.client.adapter.ConfigAnnotationBeanPostProcessor;
 import org.dynamicConfig.client.annotation.CodeConfig;
 import org.dynamicConfig.client.dto.CodeConfigDTO;
+import org.dynamicConfig.client.utils.AopTargetUtils;
 import org.dynamicConfig.client.utils.SpringContextHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,10 +58,10 @@ public class Notifiy extends JedisPubSub {
 		    		//获取容器对象
 		    		Object targetObject = applicationContext.getBean(name);
 		    		Field[] fields = targetObject.getClass().getDeclaredFields();
-		    		
 		    		System.out.println(targetObject + "是否为代理对象 ：" + AopUtils.isAopProxy(targetObject));
 		    		if(AopUtils.isAopProxy(targetObject)) {
 		    			fields = AopUtils.getTargetClass(targetObject).getDeclaredFields();
+		    			targetObject = AopTargetUtils.getTarget(targetObject);
 		    		}
 		    		
 		    		for(Field field : fields) {
@@ -69,8 +70,6 @@ public class Notifiy extends JedisPubSub {
 		    			if(null != field.getDeclaredAnnotation(CodeConfig.class)) {
 		    				try {
 		    					if(codeConfigDTO.getKey().equalsIgnoreCase(targetCode.key())) {
-		    						System.out.println("field :"  + field.getType());
-		    						
 		    						//重新赋予实例
 			    					ReflectionUtils.makeAccessible(field);
 									field.set(targetObject, codeConfigDTO.getValue());
@@ -95,6 +94,8 @@ public class Notifiy extends JedisPubSub {
 		} catch (IOException e) {
 			e.printStackTrace();
 			logger.error("Notifiy is error .",e.getMessage());
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
